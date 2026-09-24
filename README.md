@@ -50,20 +50,6 @@ theorem exists_maximum_star [Nonempty α]
         I ⊆ D → IsIntersecting I → I.card ≤ (star D i).card
 ```
 
-Here is a complete usage example, with the ground-type assumptions explicit:
-
-```lean
-import Chvatal
-
-example {α : Type*} [Fintype α] [DecidableEq α] [Nonempty α]
-    (D : Finset (Finset α)) (hD : Chvatal.IsDownset D) :
-    ∃ i : α, Chvatal.star D i ⊆ D ∧
-      Chvatal.IsIntersecting (Chvatal.star D i) ∧
-      ∀ I : Finset (Finset α), I ⊆ D → Chvatal.IsIntersecting I →
-        I.card ≤ (Chvatal.star D i).card :=
-  Chvatal.exists_maximum_star D hD
-```
-
 The same file also proves:
 
 - `Chvatal.chvatal`: each intersecting subfamily is no larger than some star.
@@ -90,7 +76,7 @@ Let $H_{\mathcal D}$ be the principal submatrix indexed by $\mathcal D$. The pro
 
 $$
 2|\mathcal I|
-\le \operatorname{Tr}(H_{\mathcal D}^2)
+\le \mathrm{Tr}(H_{\mathcal D}^2)
 =\sum_{A,B\in\mathcal D}\widehat h(A\mathbin{\triangle}B)^2
 \le 2\max_{i\in E}|\mathcal S_i|.
 $$
