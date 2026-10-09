@@ -1,6 +1,6 @@
-# Chvátal's and Kleitman's conjectures in Lean
+# Chvátal's conjecture and its spectral strengthenings in Lean
 
-A Lean formalization of the scalar spectral proofs of Chvátal's conjecture and Kleitman's conjecture with Kahn's explicit coefficients, following *Chvátal's conjecture: a proof from The Book* by David Ellis, Yuval Filmus, and Ehud Friedgut.
+A Lean formalization of the three main theorems—Chvátal's conjecture, Kleitman's conjecture with Kahn's explicit coefficients, and the projection packing bound—from *Chvátal's conjecture: a proof from The Book* by David Ellis, Yuval Filmus, and Ehud Friedgut.
 
 ## The theorem in English
 
@@ -103,6 +103,35 @@ $$
 \le 2\sum_{T\ne\varnothing}|\mathcal D\cap\mathcal S_{\tau(T)}|\widehat h(T)^2.
 $$
 
+## Projection packing theorem
+
+[Theorem 3 of the paper](https://arxiv.org/html/2609.28404v2#S4) assigns a complex subspace $U_A\subseteq\mathbb C^d$ to each $A\in\mathcal D$, subject to $U_A\perp U_B$ whenever $A\cap B=\varnothing$. This includes $A=B=\varnothing$, forcing the empty set's subspace to be zero. The packing value is
+
+$$
+\frac{1}{d}\sum_{A\in\mathcal D}\dim_{\mathbb C} U_A.
+$$
+
+**Projection packing theorem.** For every positive integer $d$, the largest packing value equals the largest star size. The upper bound holds for arbitrary subspaces. It is attained by assigning $\mathbb C^d$ to each member of a largest star and the zero subspace elsewhere.
+
+`Chvatal.projection_packing` in [Chvatal/ProjectionPacking.lean](Chvatal/ProjectionPacking.lean) chooses one largest star and proves optimality simultaneously for every positive dimension. Subspaces use Mathlib's `Submodule ℂ (EuclideanSpace ℂ (Fin d))`; `IsProjectionPacking` expresses precisely the orthogonality condition, and `projectionPackingValue` is the normalized sum of complex dimensions. Assignments are represented on the whole Boolean cube, but values outside the downset impose no constraints and do not contribute to the packing value.
+
+The public statement is:
+
+```lean
+theorem projection_packing [Nonempty α]
+    (D : Finset (Finset α)) (hD : IsDownset D) :
+    ∃ i : α, (∀ j, (star D j).card ≤ (star D i).card) ∧
+      ∀ d : ℕ, 0 < d →
+        ∃ U : Finset α → Submodule ℂ (EuclideanSpace ℂ (Fin d)),
+          IsProjectionPacking D U ∧ projectionPackingValue D U = (star D i).card ∧
+          ∀ W : Finset α → Submodule ℂ (EuclideanSpace ℂ (Fin d)),
+            IsProjectionPacking D W → projectionPackingValue D W ≤ (star D i).card
+```
+
+The proof follows Section 4 of the paper. First, `packingUp` replaces an arbitrary packing by its monotone span closure, preserving orthogonality and increasing dimensions. Its orthogonal projections define the matrix-valued witness $h(T)=P_T-P_{\overline T}$. Complex Fourier Parseval bounds its energy by $d$, and the existing overlap estimate gives the upper bound. For the lower bound, tensor the principal-downset and signed indicators with bases of the assigned subspaces. These give independent eigenvectors of eigenvalues $-1$ and $+1$ in the restricted complex block matrix.
+
+`projectionPackingValue_le_of_star_bound` supplies the upper bound for any common bound on star sizes; `starProjectionPacking_isPacking` and `starProjectionPacking_value` prove attainment.
+
 ## Proof overview
 
 Fix an intersecting family $\mathcal I\subseteq\mathcal D$, and let $\mathcal I^\uparrow$ be its upward closure in $2^E$. Define
@@ -143,10 +172,13 @@ All declarations below are in namespace `Chvatal`.
 | [Chvatal/Witness.lean](Chvatal/Witness.lean) | `IsDownset`, `IsIntersecting`; `up`: upward closure; `upIndicator`: its real indicator; `witness`: the function $h$ above. | Proves the witness's mean-zero and norm bounds, the two eigenvector identities (`down_eigen`, `signed_eigen`), independence by triangularity (`down_independent`, `signed_independent`), support and restriction to $\mathcal D$ (`down_support`, `restrict_eigen`), and the lower bound with a fixed containing witness family (`witness_lower_subset`), specialized in `witness_lower`. |
 | [Chvatal/Main.lean](Chvatal/Main.lean) | No new definitions. | Combines the bounds in `card_le_of_star_bound`, proves `chvatal` and `exists_maximum_star`, and handles the empty ground type. |
 | [Chvatal/Kleitman.lean](Chvatal/Kleitman.lean) | `IsMaximalIntersecting`, `choiceCoefficient`, `maxChoice`, `kahnCoefficient`. | Maximal-family witness identities, normalized Fourier allocations, and Kleitman's inequality with arbitrary choices and Kahn's formula. |
+| [Chvatal/ComplexCube.lean](Chvatal/ComplexCube.lean) | `complexWalsh`, `complexFourier`, `blockFourier`, `blockKernel`. | Complex Fourier inversion and Parseval, and the action of matrix-valued Fourier multipliers. |
+| [Chvatal/ComplexSpectral.lean](Chvatal/ComplexSpectral.lean) | No new definitions. | Complex Hermitian eigenvalue multiplicities and the Frobenius-energy lower bound. |
+| [Chvatal/ProjectionPacking.lean](Chvatal/ProjectionPacking.lean) | `IsProjectionPacking`, `projectionPackingValue`, `packingUp`, `projectionMatrix`, `packingWitness`, `starProjectionPacking`. | Monotone closure, block spectral bounds, and the optimal packing value in every positive dimension. |
 | [Chvatal.lean](Chvatal.lean) | No new definitions. | Public entry point: `import Chvatal` imports the complete proof. |
-| [Audit.lean](Audit.lean) | No new definitions. | Prints the axioms used by the main theorems and checks both conjectures with the family definitions expanded. |
+| [Audit.lean](Audit.lean) | No new definitions. | Prints the axioms used by the main theorems and checks all three main theorems with the mathematical definitions expanded. |
 
-The dependency order is `Cube → Counting`, `Cube + Spectral → Witness`, and `Counting + Witness → Main → Kleitman`. The formalization covers the scalar Chvátal theorem and Kleitman's downset inequalities with Kahn's formula; it does not include the weighted, projection packing, transport construction, or correlation extensions.
+The dependency order is `Cube → Counting`, `Cube + Spectral → Witness`, and `Counting + Witness → Main → Kleitman`. The complex Fourier and spectral modules extend this machinery for `ProjectionPacking`. The formalization covers all three main theorems of the paper; it does not include the weighted or correlation extensions, an explicit transport construction, or a separate formalization of quantum independent sets.
 
 ## Build and verify
 
