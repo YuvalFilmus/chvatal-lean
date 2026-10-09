@@ -167,10 +167,11 @@ lemma restrict_eigen (D : Finset (Finset α)) (M : Matrix (Finset α) (Finset α
   intro X hX hn
   rw [hf X hn, mul_zero]
 
-lemma witness_lower (D I : Finset (Finset α)) (hD : IsDownset D)
-    (hID : I ⊆ D) (hI : IsIntersecting I) :
-    2 * (I.card : ℝ) ≤ ∑ A ∈ D, ∑ B ∈ D, fourier (witness I) (A ∆ B) ^ 2 := by
-  let M : Matrix D D ℝ := fun A B => kernel (witness I) A.val B.val
+/-- The spectral lower bound with a fixed intersecting witness family. -/
+lemma witness_lower_subset (D I U : Finset (Finset α)) (hD : IsDownset D)
+    (hID : I ⊆ D) (hIU : I ⊆ U) (hU : IsIntersecting U) :
+    2 * (I.card : ℝ) ≤ ∑ A ∈ D, ∑ B ∈ D, fourier (witness U) (A ∆ B) ^ 2 := by
+  let M : Matrix D D ℝ := fun A B => kernel (witness U) A.val B.val
   have hM : M.IsHermitian := by
     ext A B
     simp [M, Matrix.conjTranspose, kernel, symmDiff_comm]
@@ -178,26 +179,31 @@ lemma witness_lower (D I : Finset (Finset α)) (hD : IsDownset D)
   have hq := signed_independent D I hID
   have hep (A : I) : M *ᵥ (fun X : D => downIndicator A.val X.val) =
       (-1 : ℝ) • (fun X : D => downIndicator A.val X.val) :=
-    restrict_eigen D (kernel (witness I)) (downIndicator A.val) (-1)
-      (fun X hX => down_support D hD (hID A.property) hX) (down_eigen I hI A.property)
+    restrict_eigen D (kernel (witness U)) (downIndicator A.val) (-1)
+      (fun X hX => down_support D hD (hID A.property) hX) (down_eigen U hU (hIU A.property))
   have heq (A : I) : M *ᵥ (fun X : D => signedIndicator A.val X.val) =
       (fun X : D => signedIndicator A.val X.val) := by
     have hs (X : Finset α) (hX : X ∉ D) : signedIndicator A.val X = 0 := by
       simp [signedIndicator, down_support D hD (hID A.property) hX]
-    simpa using restrict_eigen D (kernel (witness I)) (signedIndicator A.val) 1 hs
-      (by simpa using signed_eigen I hI A.property)
+    simpa using restrict_eigen D (kernel (witness U)) (signedIndicator A.val) 1 hs
+      (by simpa using signed_eigen U hU (hIU A.property))
   have hh := spectral_lower M hM _ _ hp hq hep heq
   change 2 * (Fintype.card I : ℝ) ≤
-    ∑ A : D, ∑ B : D, fourier (witness I) (A.val ∆ B.val) ^ 2 at hh
-  have hsum : (∑ A : D, ∑ B : D, fourier (witness I) (A.val ∆ B.val) ^ 2) =
-      ∑ A ∈ D, ∑ B ∈ D, fourier (witness I) (A ∆ B) ^ 2 := by
+    ∑ A : D, ∑ B : D, fourier (witness U) (A.val ∆ B.val) ^ 2 at hh
+  have hsum : (∑ A : D, ∑ B : D, fourier (witness U) (A.val ∆ B.val) ^ 2) =
+      ∑ A ∈ D, ∑ B ∈ D, fourier (witness U) (A ∆ B) ^ 2 := by
     calc
-      _ = ∑ A : D, ∑ B ∈ D, fourier (witness I) (A.val ∆ B) ^ 2 := by
+      _ = ∑ A : D, ∑ B ∈ D, fourier (witness U) (A.val ∆ B) ^ 2 := by
         apply Finset.sum_congr rfl
         intro A hA
-        exact Finset.sum_coe_sort D (fun B => fourier (witness I) (A.val ∆ B) ^ 2)
-      _ = _ := Finset.sum_coe_sort D (fun A => ∑ B ∈ D, fourier (witness I) (A ∆ B) ^ 2)
+        exact Finset.sum_coe_sort D (fun B => fourier (witness U) (A.val ∆ B) ^ 2)
+      _ = _ := Finset.sum_coe_sort D (fun A => ∑ B ∈ D, fourier (witness U) (A ∆ B) ^ 2)
   rw [hsum] at hh
   simpa only [Fintype.card_coe] using hh
+
+lemma witness_lower (D I : Finset (Finset α)) (hD : IsDownset D)
+    (hID : I ⊆ D) (hI : IsIntersecting I) :
+    2 * (I.card : ℝ) ≤ ∑ A ∈ D, ∑ B ∈ D, fourier (witness I) (A ∆ B) ^ 2 :=
+  witness_lower_subset D I I hD hID (Finset.Subset.refl _) hI
 
 end Chvatal
