@@ -1,6 +1,6 @@
-# Chvátal's conjecture in Lean
+# Chvátal's and Kleitman's conjectures in Lean
 
-A Lean formalization of the scalar spectral proof of Chvátal's conjecture, following *Chvátal's conjecture: a proof from The Book* by David Ellis, Yuval Filmus, and Ehud Friedgut.
+A Lean formalization of the scalar spectral proofs of Chvátal's conjecture and Kleitman's conjecture with Kahn's explicit coefficients, following *Chvátal's conjecture: a proof from The Book* by David Ellis, Yuval Filmus, and Ehud Friedgut.
 
 ## The theorem in English
 
@@ -57,6 +57,52 @@ The same file also proves:
 - `Chvatal.star_intersecting`: every star is intersecting.
 - `Chvatal.card_eq_zero_of_isEmpty`: an intersecting family on an empty ground type has cardinality zero.
 
+## Kleitman's theorem with Kahn's coefficients
+
+Let $\mathcal U\subseteq 2^E$ be maximal under inclusion among intersecting families, and fix a linear order on the nonempty finite ground set $E$. Define
+
+$$
+h=2\mathbf 1_{\mathcal U}-1,
+\qquad
+c_i=\sum_{\substack{T\ne\varnothing\\\max(T)=i}}\widehat h(T)^2.
+$$
+
+**Kleitman's theorem with Kahn's formula.** These coefficients are nonnegative, sum to one, and satisfy
+
+$$
+|\mathcal U\cap\mathcal D|
+\le \sum_{i\in E}c_i\,|\{A\in\mathcal D:i\in A\}|
+\qquad\text{for every downset }\mathcal D\subseteq 2^E.
+$$
+
+The coefficients depend only on $\mathcal U$ and the fixed coordinate order, and work simultaneously for all downsets. The formalized statement is the downset inequality; no transport or max-flow construction is included.
+
+The definitions and theorem are in [Chvatal/Kleitman.lean](Chvatal/Kleitman.lean):
+
+```lean
+def IsMaximalIntersecting (U : Finset (Finset α)) : Prop :=
+  IsIntersecting U ∧ ∀ V, U ⊆ V → IsIntersecting V → V ⊆ U
+
+theorem kleitman_kahn [LinearOrder α] [Nonempty α]
+    (U : Finset (Finset α)) (hU : IsMaximalIntersecting U) :
+    (∀ i, 0 ≤ kahnCoefficient U i) ∧
+    (∑ i, kahnCoefficient U i = 1) ∧
+    ∀ D : Finset (Finset α), IsDownset D →
+      ((U ∩ D).card : ℝ) ≤ ∑ i, kahnCoefficient U i * (star D i).card
+```
+
+`kahnCoefficient U i` groups the squared Fourier coefficients of `witness U` by their largest coordinate. The lemma `maximal_witness_eq` proves that this witness is exactly $2\mathbf 1_{\mathcal U}-1$, and `maximal_parseval` proves that its total Fourier energy is one.
+
+More generally, `choiceCoefficient U τ i` assigns the Fourier energy of each nonempty $T$ to any selected coordinate $\tau(T)\in T$. The theorem `kleitman_choice_coefficients` proves the same nonnegativity, normalization, and simultaneous downset inequalities for every such choice function. In Lean, `τ` is defined on all finite subsets; its value at the empty set is ignored.
+
+The spectral proof keeps `witness U` fixed and applies `witness_lower_subset` to $\mathcal I=\mathcal U\cap\mathcal D$. Grouping by symmetric difference and using `overlap_card_le` gives
+
+$$
+2|\mathcal U\cap\mathcal D|
+\le \sum_{T\ne\varnothing}|\operatorname{overlap}(\mathcal D,T)|\widehat h(T)^2
+\le 2\sum_{T\ne\varnothing}|\mathcal D\cap\mathcal S_{\tau(T)}|\widehat h(T)^2.
+$$
+
 ## Proof overview
 
 Fix an intersecting family $\mathcal I\subseteq\mathcal D$, and let $\mathcal I^\uparrow$ be its upward closure in $2^E$. Define
@@ -94,12 +140,13 @@ All declarations below are in namespace `Chvatal`.
 | [Chvatal/Cube.lean](Chvatal/Cube.lean) | `chi`: real Walsh characters; `toggle`: symmetric-difference equivalence; `walsh`: unnormalized Walsh transform; `fourier`: normalized Fourier transform; `kernel`: convolution matrix; `downIndicator`: $p_A$; `signedIndicator`: $q_A$. | Character identities and orthogonality (`chi_orthogonal`), inversion (`walsh_twice`), Parseval (`fourier_parseval`), the multiplier action (`kernel_action`, `kernel_eigen`), and Fourier support identities (`walsh_downIndicator_zero`, `walsh_signedIndicator`). |
 | [Chvatal/Counting.lean](Chvatal/Counting.lean) | `star D i`: the star centered at `i`; `overlap D T`: those $A\in\mathcal D$ for which $A\triangle T\in\mathcal D$. | `overlap_card_le` proves the pair-counting bound. `energy_reindex` groups entries by symmetric difference. `energy_upper` proves the upper bound for any nonnegative Fourier-energy weights with zero weight at the empty set and total weight at most one. |
 | [Chvatal/Spectral.lean](Chvatal/Spectral.lean) | No new definitions. | The general linear-algebra argument: `eigenvector_card_le` bounds eigenvalue multiplicities, `trace_square` expresses the trace as a sum of squared eigenvalues, and `spectral_lower` counts independent $-1$ and $+1$ eigenvectors. Uses Mathlib's spectral theorem and the bound of geometric by algebraic multiplicity. |
-| [Chvatal/Witness.lean](Chvatal/Witness.lean) | `IsDownset`, `IsIntersecting`; `up`: upward closure; `upIndicator`: its real indicator; `witness`: the function $h$ above. | Proves the witness's mean-zero and norm bounds, the two eigenvector identities (`down_eigen`, `signed_eigen`), independence by triangularity (`down_independent`, `signed_independent`), support and restriction to $\mathcal D$ (`down_support`, `restrict_eigen`), and the complete lower bound (`witness_lower`). |
+| [Chvatal/Witness.lean](Chvatal/Witness.lean) | `IsDownset`, `IsIntersecting`; `up`: upward closure; `upIndicator`: its real indicator; `witness`: the function $h$ above. | Proves the witness's mean-zero and norm bounds, the two eigenvector identities (`down_eigen`, `signed_eigen`), independence by triangularity (`down_independent`, `signed_independent`), support and restriction to $\mathcal D$ (`down_support`, `restrict_eigen`), and the lower bound with a fixed containing witness family (`witness_lower_subset`), specialized in `witness_lower`. |
 | [Chvatal/Main.lean](Chvatal/Main.lean) | No new definitions. | Combines the bounds in `card_le_of_star_bound`, proves `chvatal` and `exists_maximum_star`, and handles the empty ground type. |
+| [Chvatal/Kleitman.lean](Chvatal/Kleitman.lean) | `IsMaximalIntersecting`, `choiceCoefficient`, `maxChoice`, `kahnCoefficient`. | Maximal-family witness identities, normalized Fourier allocations, and Kleitman's inequality with arbitrary choices and Kahn's formula. |
 | [Chvatal.lean](Chvatal.lean) | No new definitions. | Public entry point: `import Chvatal` imports the complete proof. |
-| [Audit.lean](Audit.lean) | No new definitions. | Prints the axioms used by the main theorems and checks the cardinality statement with the family definitions expanded. |
+| [Audit.lean](Audit.lean) | No new definitions. | Prints the axioms used by the main theorems and checks both conjectures with the family definitions expanded. |
 
-The dependency order is `Cube → Counting`, `Cube + Spectral → Witness`, and `Counting + Witness → Main`. The formalization covers the scalar theorem; it does not include the weighted, projection packing, flow, or correlation extensions.
+The dependency order is `Cube → Counting`, `Cube + Spectral → Witness`, and `Counting + Witness → Main → Kleitman`. The formalization covers the scalar Chvátal theorem and Kleitman's downset inequalities with Kahn's formula; it does not include the weighted, projection packing, transport construction, or correlation extensions.
 
 ## Build and verify
 
