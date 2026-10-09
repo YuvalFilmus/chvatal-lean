@@ -57,6 +57,34 @@ The same file also proves:
 - `Chvatal.star_intersecting`: every star is intersecting.
 - `Chvatal.card_eq_zero_of_isEmpty`: an intersecting family on an empty ground type has cardinality zero.
 
+## Proof of Chvátal's theorem
+
+Fix an intersecting family $\mathcal I\subseteq\mathcal D$, and let $\mathcal I^\uparrow$ be its upward closure in $2^E$. Define
+
+$$
+h(T)=\mathbf 1_{\mathcal I^\uparrow}(T)
+     -\mathbf 1_{\mathcal I^\uparrow}(E\setminus T).
+$$
+
+This function has mean zero and takes values in $\{-1,0,1\}$. Its normalized Fourier transform defines the real symmetric convolution matrix
+
+$$
+H(A,B)=\widehat h(A\mathbin{\triangle}B).
+$$
+
+Let $H_{\mathcal D}$ be the principal submatrix indexed by $\mathcal D$. The proof establishes
+
+$$
+2|\mathcal I|
+\le \mathrm{Tr}(H_{\mathcal D}^2)
+=\sum_{A,B\in\mathcal D}\widehat h(A\mathbin{\triangle}B)^2
+\le 2\max_{i\in E}|\mathcal S_i|.
+$$
+
+For the lower bound, the functions $p_A(X)=\mathbf 1_{X\subseteq A}$ and $q_A(X)=(-1)^{|X|}p_A(X)$, for $A\in\mathcal I$, give linearly independent eigenvectors with eigenvalues $-1$ and $+1$, respectively. Downward closure ensures these functions are supported on $\mathcal D$.
+
+For the upper bound, group matrix entries by their symmetric difference $T$. For each nonempty $T$ and $i\in T$, the number of relevant pairs is at most $2|\mathcal S_i|$. Parseval and $\mathbb E[h^2]\le1$ complete the estimate.
+
 ## Kleitman's theorem with Kahn's coefficients
 
 Let $\mathcal U\subseteq 2^E$ be maximal under inclusion among intersecting families, and fix a linear order on the nonempty finite ground set $E$. Define
@@ -131,34 +159,6 @@ theorem projection_packing [Nonempty α]
 The proof follows Section 4 of the paper. First, `packingUp` replaces an arbitrary packing by its monotone span closure, preserving orthogonality and increasing dimensions. Its orthogonal projections define the matrix-valued witness $h(T)=P_T-P_{\overline T}$. Complex Fourier Parseval bounds its energy by $d$, and the existing overlap estimate gives the upper bound. For the lower bound, tensor the principal-downset and signed indicators with bases of the assigned subspaces. These give independent eigenvectors of eigenvalues $-1$ and $+1$ in the restricted complex block matrix.
 
 `projectionPackingValue_le_of_star_bound` supplies the upper bound for any common bound on star sizes; `starProjectionPacking_isPacking` and `starProjectionPacking_value` prove attainment.
-
-## Proof overview
-
-Fix an intersecting family $\mathcal I\subseteq\mathcal D$, and let $\mathcal I^\uparrow$ be its upward closure in $2^E$. Define
-
-$$
-h(T)=\mathbf 1_{\mathcal I^\uparrow}(T)
-     -\mathbf 1_{\mathcal I^\uparrow}(E\setminus T).
-$$
-
-This function has mean zero and takes values in $\{-1,0,1\}$. Its normalized Fourier transform defines the real symmetric convolution matrix
-
-$$
-H(A,B)=\widehat h(A\mathbin{\triangle}B).
-$$
-
-Let $H_{\mathcal D}$ be the principal submatrix indexed by $\mathcal D$. The proof establishes
-
-$$
-2|\mathcal I|
-\le \mathrm{Tr}(H_{\mathcal D}^2)
-=\sum_{A,B\in\mathcal D}\widehat h(A\mathbin{\triangle}B)^2
-\le 2\max_{i\in E}|\mathcal S_i|.
-$$
-
-For the lower bound, the functions $p_A(X)=\mathbf 1_{X\subseteq A}$ and $q_A(X)=(-1)^{|X|}p_A(X)$, for $A\in\mathcal I$, give linearly independent eigenvectors with eigenvalues $-1$ and $+1$, respectively. Downward closure ensures these functions are supported on $\mathcal D$.
-
-For the upper bound, group matrix entries by their symmetric difference $T$. For each nonempty $T$ and $i\in T$, the number of relevant pairs is at most $2|\mathcal S_i|$. Parseval and $\mathbb E[h^2]\le1$ complete the estimate.
 
 ## File and definition guide
 
