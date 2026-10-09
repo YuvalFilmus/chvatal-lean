@@ -99,7 +99,7 @@ The spectral proof keeps `witness U` fixed and applies `witness_lower_subset` to
 
 $$
 2|\mathcal U\cap\mathcal D|
-\le \sum_{T\ne\varnothing}|\operatorname{overlap}(\mathcal D,T)|\widehat h(T)^2
+\le \sum_{T\ne\varnothing}|\mathrm{overlap}(\mathcal D,T)|\widehat h(T)^2
 \le 2\sum_{T\ne\varnothing}|\mathcal D\cap\mathcal S_{\tau(T)}|\widehat h(T)^2.
 $$
 
