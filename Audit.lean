@@ -46,3 +46,39 @@ example {α : Type*} [Fintype α] [DecidableEq α] [Nonempty α]
             (∑ A ∈ D, (Module.finrank ℂ (W A) : ℝ)) / d ≤ (D.filter (i ∈ ·)).card := by
   simpa only [Chvatal.IsProjectionPacking, Chvatal.projectionPackingValue,
     Chvatal.star, Fintype.card_fin] using Chvatal.projection_packing D hD
+
+#print axioms Chvatal.kleitman_choice_weighted
+#print axioms Chvatal.kleitman_kahn_weighted
+#print axioms Chvatal.kleitman_choice_biased
+#print axioms Chvatal.chvatal_biased
+#print axioms Chvatal.exists_maximum_biased_star
+#print axioms Chvatal.biasedMeasure_eq_zero_of_isEmpty
+
+-- The measure formula, downset and intersection hypotheses, and full closed p interval.
+example {α : Type*} [Fintype α] [DecidableEq α] [Nonempty α]
+    (D I : Finset (Finset α))
+    (hD : ∀ A ∈ D, ∀ B, B ⊆ A → B ∈ D)
+    (hID : I ⊆ D)
+    (hI : ∀ A ∈ I, ∀ B ∈ I, ¬ Disjoint A B)
+    (p : ℝ) (hp : 0 ≤ p) (hp2 : p ≤ 1 / 2) :
+    ∃ i : α,
+      (∑ A ∈ I, p ^ A.card * (1 - p) ^ (Fintype.card α - A.card)) ≤
+        ∑ A ∈ D.filter (fun A => i ∈ A),
+          p ^ A.card * (1 - p) ^ (Fintype.card α - A.card) := by
+  simpa only [Chvatal.biasedMeasure, Chvatal.biasedWeight, Chvatal.star] using
+    Chvatal.chvatal_biased D I hD hID hI p hp hp2
+
+-- Coefficients precede the weight quantifier, and the only weight assumptions
+-- are nonnegativity and decreasingness under inclusion.
+example {α : Type*} [Fintype α] [DecidableEq α] [LinearOrder α] [Nonempty α]
+    (U : Finset (Finset α))
+    (hU : (∀ A ∈ U, ∀ B ∈ U, ¬ Disjoint A B) ∧
+      ∀ V : Finset (Finset α), U ⊆ V →
+        (∀ A ∈ V, ∀ B ∈ V, ¬ Disjoint A B) → V ⊆ U) :
+    (∀ i, 0 ≤ Chvatal.kahnCoefficient U i) ∧
+    (∑ i, Chvatal.kahnCoefficient U i = 1) ∧
+    ∀ h : Finset α → ℝ, (∀ A, 0 ≤ h A) →
+      (∀ A B, A ⊆ B → h B ≤ h A) →
+      (∑ A ∈ U, h A) ≤ ∑ i, Chvatal.kahnCoefficient U i *
+        ∑ A ∈ (Finset.univ : Finset (Finset α)).filter (fun A => i ∈ A), h A :=
+  Chvatal.kleitman_kahn_weighted U hU

@@ -1,6 +1,6 @@
 # Chvátal's conjecture and its spectral strengthenings in Lean
 
-A Lean formalization of the three main theorems—Chvátal's conjecture, Kleitman's conjecture with Kahn's explicit coefficients, and the projection packing bound—from *Chvátal's conjecture: a proof from The Book* by David Ellis, Yuval Filmus, and Ehud Friedgut.
+A Lean formalization of Chvátal's conjecture, its $p$-biased extension, Kleitman's conjecture with Kahn's explicit coefficients, and the projection packing bound from *Chvátal's conjecture: a proof from The Book* by David Ellis, Yuval Filmus, and Ehud Friedgut.
 
 ## The theorem in English
 
@@ -131,6 +131,49 @@ $$
 \le 2\sum_{T\ne\varnothing}|\mathcal D\cap\mathcal S_{\tau(T)}|\widehat h(T)^2.
 $$
 
+## The $p$-biased extension
+
+The paragraph at the end of Section 3 extends Chvátal's theorem to the $p$-biased measure
+
+$$
+\mu_p(\mathcal F)=\sum_{A\in\mathcal F}p^{|A|}(1-p)^{|E|-|A|}.
+$$
+
+For **every $0\le p\le 1/2$**, every intersecting subfamily $\mathcal I$ of a downset $\mathcal D$ satisfies
+
+$$
+\mu_p(\mathcal I)\le\mu_p(\mathcal S_i)
+$$
+
+for some $i\in E$, where $\mathcal S_i=\{A\in\mathcal D:i\in A\}$. As in the counting theorem, the ground set is nonempty to name a center; the empty ground set is handled separately. Both endpoints $p=0$ and $p=1/2$ are included, with the usual convention $0^0=1$ in the atom weights.
+
+[Chvatal/Biased.lean](Chvatal/Biased.lean) defines `biasedWeight p A` and `biasedMeasure p F` by these formulas and proves:
+
+```lean
+theorem chvatal_biased [Nonempty α] (D I : Finset (Finset α))
+    (hD : IsDownset D) (hID : I ⊆ D) (hI : IsIntersecting I)
+    (p : ℝ) (hp : 0 ≤ p) (hp2 : p ≤ 1 / 2) :
+    ∃ i : α, biasedMeasure p I ≤ biasedMeasure p (star D i)
+```
+
+`exists_maximum_biased_star` chooses a single star that maximizes $\mu_p$ among all intersecting subfamilies of the downset. Its center may depend on $p$ and $\mathcal D$, but is independent of the competing family.
+
+The proof follows the paragraph's weighted Kleitman argument. A finite layer decomposition extends the downset inequality to every nonnegative antitone function $h$. The theorem `kleitman_kahn_weighted` proves that the same nonnegative, normalized Kahn coefficients work simultaneously for every such $h$:
+
+$$
+\sum_{A\in\mathcal U}h(A)
+\le \sum_i c_i\sum_{A\ni i}h(A).
+$$
+
+These unnormalized sums are equivalent to the paper's uniform-expectation formulation after division by $2^{|E|}$. For $0\le p\le1/2$, the function $h(A)=p^{|A|}(1-p)^{|E|-|A|}1_{A\in\mathcal D}$ is nonnegative and antitone. `kleitman_choice_biased` therefore gives
+
+$$
+\mu_p(\mathcal U\cap\mathcal D)
+\le \sum_i c_i\mu_p(\mathcal S_i).
+$$
+
+Extending $\mathcal I$ to a maximal intersecting family and bounding this convex combination by a largest star proves the claim. `kleitman_choice_weighted` and `kleitman_choice_biased` also support arbitrary coordinate choices in the Fourier allocation. `biasedMeasure_eq_zero_of_isEmpty` covers the empty ground type.
+
 ## Projection packing theorem
 
 [Theorem 3 of the paper](https://arxiv.org/html/2609.28404v2#S4) assigns a complex subspace $U_A\subseteq\mathbb C^d$ to each $A\in\mathcal D$, subject to $U_A\perp U_B$ whenever $A\cap B=\varnothing$. This includes $A=B=\varnothing$, forcing the empty set's subspace to be zero. The packing value is
@@ -172,13 +215,14 @@ All declarations below are in namespace `Chvatal`.
 | [Chvatal/Witness.lean](Chvatal/Witness.lean) | `IsDownset`, `IsIntersecting`; `up`: upward closure; `upIndicator`: its real indicator; `witness`: the function $h$ above. | Proves the witness's mean-zero and norm bounds, the two eigenvector identities (`down_eigen`, `signed_eigen`), independence by triangularity (`down_independent`, `signed_independent`), support and restriction to $\mathcal D$ (`down_support`, `restrict_eigen`), and the lower bound with a fixed containing witness family (`witness_lower_subset`), specialized in `witness_lower`. |
 | [Chvatal/Main.lean](Chvatal/Main.lean) | No new definitions. | Combines the bounds in `card_le_of_star_bound`, proves `chvatal` and `exists_maximum_star`, and handles the empty ground type. |
 | [Chvatal/Kleitman.lean](Chvatal/Kleitman.lean) | `IsMaximalIntersecting`, `choiceCoefficient`, `maxChoice`, `kahnCoefficient`. | Maximal-family witness identities, normalized Fourier allocations, and Kleitman's inequality with arbitrary choices and Kahn's formula. |
+| [Chvatal/Biased.lean](Chvatal/Biased.lean) | `biasedWeight`, `biasedMeasure`. | Finite layer decomposition, weighted Kleitman inequalities, the biased inequality for arbitrary Fourier allocations, and `chvatal_biased` / `exists_maximum_biased_star` for $0≤p≤1/2$. |
 | [Chvatal/ComplexCube.lean](Chvatal/ComplexCube.lean) | `complexWalsh`, `complexFourier`, `blockFourier`, `blockKernel`. | Complex Fourier inversion and Parseval, and the action of matrix-valued Fourier multipliers. |
 | [Chvatal/ComplexSpectral.lean](Chvatal/ComplexSpectral.lean) | No new definitions. | Complex Hermitian eigenvalue multiplicities and the Frobenius-energy lower bound. |
 | [Chvatal/ProjectionPacking.lean](Chvatal/ProjectionPacking.lean) | `IsProjectionPacking`, `projectionPackingValue`, `packingUp`, `projectionMatrix`, `packingWitness`, `starProjectionPacking`. | Monotone closure, block spectral bounds, and the optimal packing value in every positive dimension. |
 | [Chvatal.lean](Chvatal.lean) | No new definitions. | Public entry point: `import Chvatal` imports the complete proof. |
-| [Audit.lean](Audit.lean) | No new definitions. | Prints the axioms used by the main theorems and checks all three main theorems with the mathematical definitions expanded. |
+| [Audit.lean](Audit.lean) | No new definitions. | Prints the axioms and checks the main theorems and the biased extension with the mathematical definitions expanded. |
 
-The dependency order is `Cube → Counting`, `Cube + Spectral → Witness`, and `Counting + Witness → Main → Kleitman`. The complex Fourier and spectral modules extend this machinery for `ProjectionPacking`. The formalization covers all three main theorems of the paper; it does not include the weighted or correlation extensions, an explicit transport construction, or a separate formalization of quantum independent sets.
+The dependency order is `Cube → Counting`, `Cube + Spectral → Witness`, and `Counting + Witness → Main → Kleitman → Biased`. The complex Fourier and spectral modules extend this machinery for `ProjectionPacking`. The formalization covers all three main theorems of the paper; it also includes the weighted Kleitman and $p$-biased Chvátal extensions at the end of Section 3. It does not include the other weighted or correlation extensions, an explicit transport construction, or a separate formalization of quantum independent sets.
 
 ## Build and verify
 
